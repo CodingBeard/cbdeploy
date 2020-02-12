@@ -69,12 +69,14 @@ func (c BuildUpdate) Run() error {
 				c.Log.InfoF("root", "Different version found: %s, current version: %s", version, c.CurrentVersion)
 
 				for _, file := range c.Files {
+					c.Log.InfoF("DEPLOY", "Downloading file %s/%s", c.Bucket, file.RemotePath)
 					initBytes, e := downloader.Download(c.Bucket, file.RemotePath)
 					if e != nil {
 						c.ErrorHandler.Error(e)
 						return
 					}
 
+					c.Log.InfoF("DEPLOY", "Writing data to %s", file.LocalPath)
 					e = ioutil.WriteFile(file.LocalPath, initBytes, os.ModePerm)
 					if e != nil {
 						c.ErrorHandler.Error(e)
@@ -83,18 +85,20 @@ func (c BuildUpdate) Run() error {
 				}
 
 				if c.InitScriptRemotePath != "" {
+					c.Log.InfoF("DEPLOY", "Making init script executable: %s", localInitScriptPath)
 					e = exec.Command("chmod", "+x", localInitScriptPath).Run()
 					if e != nil {
 						c.ErrorHandler.Error(e)
 						return
 					}
 
-					//output, e := exec.Command(localInitScriptPath).Output()
-					//if e != nil {
-					//	c.ErrorHandler.Error(e)
-					//	return
-					//}
-					//c.Log.InfoF("root", string(output))
+					c.Log.InfoF("DEPLOY", "Executing init script: %s", localInitScriptPath)
+					output, e := exec.Command(localInitScriptPath).Output()
+					if e != nil {
+						c.ErrorHandler.Error(e)
+						return
+					}
+					c.Log.InfoF("root", string(output))
 				}
 
 				c.CurrentVersion = version
