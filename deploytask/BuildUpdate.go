@@ -23,6 +23,7 @@ type BuildUpdate struct {
 	Bucket                string
 	Files                 []FileDownload
 	InitScriptRemotePath  string
+	CheckInterval         time.Duration
 }
 
 func (c BuildUpdate) GetSchedule() string {
@@ -53,8 +54,12 @@ func (c BuildUpdate) Run() error {
 		c.Files = append(c.Files, FileDownload{c.InitScriptRemotePath, localInitScriptPath})
 	}
 
+	if c.CheckInterval == 0 {
+		c.CheckInterval = time.Second * 5
+	}
+
 	cbutil.RepeatingTask{
-		Sleep:      time.Second * 5,
+		Sleep:      c.CheckInterval,
 		SleepFirst: true,
 		Blocking:   true,
 		Run: func() {
